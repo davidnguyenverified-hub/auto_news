@@ -6,34 +6,56 @@
 
 <style>
 body {
-  font-family: -apple-system, BlinkMacSystemFont, Arial;
-  background: #f5f7fb;
-  color: #222;
+  font-family: -apple-system, BlinkMacSystemFont;
+  background: #f2f2f7;
+  margin: 0;
   padding: 20px;
+}
+
+.container {
   max-width: 900px;
   margin: auto;
 }
 
 h1 {
   text-align: center;
-}
-
-h2 {
-  margin-top: 40px;
-  border-left: 5px solid #007bff;
-  padding-left: 10px;
-}
-
-.section {
   margin-bottom: 30px;
 }
 
+.section {
+  margin-top: 40px;
+}
+
+.section h2 {
+  margin-bottom: 10px;
+  color: #555;
+}
+
+/* 🔥 FEATURE CARD */
+.feature {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.feature h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.feature p {
+  color: #444;
+  line-height: 1.5;
+}
+
+/* 🔹 SMALL CARD */
 .card {
   background: white;
-  padding: 15px;
-  margin: 12px 0;
+  padding: 14px;
   border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  margin: 10px 0;
   transition: 0.2s;
 }
 
@@ -42,61 +64,38 @@ h2 {
 }
 
 .card h3 {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
+  font-size: 15px;
 }
 
 .card p {
-  margin: 0 0 10px;
-  color: #444;
+  font-size: 13px;
+  color: #666;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .meta {
-  font-size: 12px;
-  color: #888;
-}
-
-.new {
-  border-left: 4px solid #28a745;
+  font-size: 11px;
+  color: #999;
 }
 </style>
 </head>
 
 <body>
 
+<div class="container">
+
 <h1>🧠 Daily Smart News</h1>
 
-<div class="section">
-  <h2>Australia</h2>
-  <div id="au"></div>
-</div>
+<div id="content"></div>
 
-<div class="section">
-  <h2>Việt Nam</h2>
-  <div id="vn"></div>
-</div>
-
-<div class="section">
-  <h2>🌍 World</h2>
-  <div id="world"></div>
 </div>
 
 <script>
 const API = "https://opensheet.elk.sh/1s0kmUkwGY_mUY_4TwSmJY_Qhd6stSHB_M7pEgzucZIA/Sheet1";
-
-// tránh trùng
-const seen = new Set();
-
-// giới hạn tổng
-const MAX_TOTAL = 30;
-
-// giới hạn mỗi vùng
-const MAX_PER_REGION = 10;
-
-let count = {
-  AU: 0,
-  VN: 0,
-  WORLD: 0
-};
 
 fetch(API)
   .then(res => res.json())
@@ -105,57 +104,50 @@ fetch(API)
     // sort mới nhất
     data.sort((a,b) => new Date(b.Date) - new Date(a.Date));
 
-    let total = 0;
+    const container = document.getElementById("content");
 
-    data.forEach(item => {
-      if(total >= MAX_TOTAL) return;
+    const regions = {
+      "AU": "🇦🇺 Australia",
+      "VN": "🇻🇳 Vietnam",
+      "WORLD": "🌍 World"
+    };
 
-      const title = item.Title?.trim();
-      const date = item.Date;
-      const region = item.Region?.trim().toUpperCase();
+    Object.keys(regions).forEach(region => {
 
-      if(!title || !region) return;
+      const section = document.createElement("div");
+      section.className = "section";
 
-      // key chống trùng
-      const key = title + date;
-      if(seen.has(key)) return;
-      seen.add(key);
+      section.innerHTML = `<h2>${regions[region]}</h2>`;
 
-      // giới hạn mỗi vùng
-      if(count[region] >= MAX_PER_REGION) return;
+      const items = data.filter(x => x.Region === region).slice(0,10);
 
-      // đánh dấu tin mới (trong 24h)
-      const isNew = (Date.now() - new Date(date)) < 86400000;
+      if(items.length === 0) return;
 
-      const card = `
-        <div class="card ${isNew ? 'new' : ''}">
-          <h3>${title}</h3>
-          <p>${item.Summary}</p>
-          <div class="meta">${item.Source} • ${date}</div>
+      // 🔥 FEATURE (tin đầu)
+      const first = items[0];
+
+      section.innerHTML += `
+        <div class="feature">
+          <h2>${first.Title}</h2>
+          <p>${first.Summary}</p>
+          <div class="meta">${first.Date}</div>
         </div>
       `;
 
-      if(region === "AU") {
-        document.getElementById("au").innerHTML += card;
-        count.AU++;
-      }
+      // 🔹 các tin còn lại
+      items.slice(1).forEach(item => {
+        section.innerHTML += `
+          <div class="card">
+            <h3>${item.Title}</h3>
+            <p>${item.Summary}</p>
+            <div class="meta">${item.Date}</div>
+          </div>
+        `;
+      });
 
-      if(region === "VN") {
-        document.getElementById("vn").innerHTML += card;
-        count.VN++;
-      }
-
-      if(region === "WORLD") {
-        document.getElementById("world").innerHTML += card;
-        count.WORLD++;
-      }
-
-      total++;
+      container.appendChild(section);
     });
-  })
-  .catch(err => {
-    console.error(err);
-    document.body.innerHTML += "<p>Lỗi load dữ liệu</p>";
+
   });
 </script>
 
