@@ -1,1 +1,85 @@
 
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>News Dashboard</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #111;
+  color: white;
+  padding: 20px;
+}
+
+h2 {
+  border-bottom: 2px solid gold;
+}
+
+.section {
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #1b1b1b;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+}
+
+.card:hover {
+  background: #2a2a2a;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🔥 Daily Smart News</h1>
+
+<div class="section">
+  <h2>🇦🇺 Australia</h2>
+  <div id="au"></div>
+</div>
+
+<div class="section">
+  <h2>🇻🇳 Vietnam</h2>
+  <div id="vn"></div>
+</div>
+
+<div class="section">
+  <h2>🌍 World</h2>
+  <div id="world"></div>
+</div>
+
+<script>
+const API = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTCvjsr0vUgZKBPd5IsGk63vnvmg0Spn3AXcynQeZyT9hgJBQ8CnQTbR5gD27ZvZ91jydkSzs17PGVR/pubhtml?gid=0&single=true";
+
+fetch(API)
+  .then(res => res.json())
+  .then(data => {
+    data.forEach(item => {
+      const card = `
+        <div class="card">
+          <h3>${item.Title}</h3>
+          <p>${item.Summary}</p>
+          <small>${item.Source} | ${item.Date}</small>
+        </div>
+      `;
+
+      if(item.Region === "AU") {
+        document.getElementById("au").innerHTML += card;
+      }
+      if(item.Region === "VN") {
+        document.getElementById("vn").innerHTML += card;
+      }
+      if(item.Region === "WORLD") {
+        document.getElementById("world").innerHTML += card;
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
