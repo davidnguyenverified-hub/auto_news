@@ -1,42 +1,69 @@
-
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>News Dashboard</title>
+<title>Smart News</title>
 
 <style>
 body {
-  font-family: Arial;
-  background: #111;
-  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, Arial;
+  background: #f5f7fb;
+  color: #222;
   padding: 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+h1 {
+  text-align: center;
 }
 
 h2 {
-  border-bottom: 2px solid gold;
+  margin-top: 40px;
+  border-left: 5px solid #007bff;
+  padding-left: 10px;
 }
 
 .section {
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
 .card {
-  background: #1b1b1b;
+  background: white;
   padding: 15px;
-  margin: 10px 0;
-  border-radius: 10px;
+  margin: 12px 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: 0.2s;
 }
 
 .card:hover {
-  background: #2a2a2a;
+  transform: translateY(-2px);
+}
+
+.card h3 {
+  margin: 0 0 8px;
+}
+
+.card p {
+  margin: 0 0 10px;
+  color: #444;
+}
+
+.meta {
+  font-size: 12px;
+  color: #888;
+}
+
+.new {
+  border-left: 4px solid #28a745;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🔥 Daily Smart News</h1>
+<h1>🧠 Daily Smart News</h1>
 
 <div class="section">
   <h2>🇦🇺 Australia</h2>
@@ -56,28 +83,79 @@ h2 {
 <script>
 const API = "https://opensheet.elk.sh/1s0kmUkwGY_mUY_4TwSmJY_Qhd6stSHB_M7pEgzucZIA/Sheet1";
 
+// tránh trùng
+const seen = new Set();
+
+// giới hạn tổng
+const MAX_TOTAL = 30;
+
+// giới hạn mỗi vùng
+const MAX_PER_REGION = 10;
+
+let count = {
+  AU: 0,
+  VN: 0,
+  WORLD: 0
+};
+
 fetch(API)
   .then(res => res.json())
   .then(data => {
+
+    // sort mới nhất
+    data.sort((a,b) => new Date(b.Date) - new Date(a.Date));
+
+    let total = 0;
+
     data.forEach(item => {
+      if(total >= MAX_TOTAL) return;
+
+      const title = item.Title?.trim();
+      const date = item.Date;
+      const region = item.Region?.trim().toUpperCase();
+
+      if(!title || !region) return;
+
+      // key chống trùng
+      const key = title + date;
+      if(seen.has(key)) return;
+      seen.add(key);
+
+      // giới hạn mỗi vùng
+      if(count[region] >= MAX_PER_REGION) return;
+
+      // đánh dấu tin mới (trong 24h)
+      const isNew = (Date.now() - new Date(date)) < 86400000;
+
       const card = `
-        <div class="card">
-          <h3>${item.Title}</h3>
+        <div class="card ${isNew ? 'new' : ''}">
+          <h3>${title}</h3>
           <p>${item.Summary}</p>
-          <small>${item.Source} | ${item.Date}</small>
+          <div class="meta">${item.Source} • ${date}</div>
         </div>
       `;
 
-      if(item.Region === "AU") {
+      if(region === "AU") {
         document.getElementById("au").innerHTML += card;
+        count.AU++;
       }
-      if(item.Region === "VN") {
+
+      if(region === "VN") {
         document.getElementById("vn").innerHTML += card;
+        count.VN++;
       }
-      if(item.Region === "WORLD") {
+
+      if(region === "WORLD") {
         document.getElementById("world").innerHTML += card;
+        count.WORLD++;
       }
+
+      total++;
     });
+  })
+  .catch(err => {
+    console.error(err);
+    document.body.innerHTML += "<p>Lỗi load dữ liệu</p>";
   });
 </script>
 
